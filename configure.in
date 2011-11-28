@@ -1,0 +1,175 @@
+dnl Process this file with autoconf to produce a configure script.
+dnl Note: this is a test version
+dnl
+dnl local configure for libfc
+dnl
+
+
+AC_INIT(src/fcmanager/main.c)
+
+AM_INIT_AUTOMAKE(FunctionCheck, 3.0.12)
+
+dnl Uncomment this, and include "config.h" to get defines
+dnl
+dnl AM_CONFIG_HEADER(config.h)
+
+AC_CONFIG_MACRO_DIR([m4])
+
+dnl some additionnal options to configure
+
+dnl the 'debug' option allow compilation with debug activated
+AC_ARG_ENABLE(debug,
+     [  --enable-debug    Turn on debugging],
+     [case "${enableval}" in
+       yes) debug=true ;;
+       no)  debug=false ;;
+       *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
+     esac],[debug=false])
+
+AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
+
+dnl Checks for programs. Not sure I need all of them
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_PROG_LIBTOOL
+
+AC_PATH_PROG(MAKEINFO, makeinfo, :)
+AC_PATH_PROG(TEXI2HTML, texi2html, :)
+
+
+dnl TO ADD: check for gcc AND gcc --version >= 2.95.2
+
+
+
+dnl the conditionnal for -monolithic option for texi2html
+AM_CONDITIONAL(TEXI2HTMLOPT, test -n "`${TEXI2HTML} --help 2>&1 | grep monolithic`" )
+
+
+dnl Checks for libraries.
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(link.h errno.h pthread.h unistd.h time.h \
+		sys/time.h sys/times.h sys/types.h \
+		limits.h string.h stdarg.h malloc.h \
+		dlfcn.h sys/ipc.h sys/shm.h)
+
+
+dnl check for pthread in order to set ldflags
+AM_CONDITIONAL(WITHTHREAD, test yes = "$ac_cv_header_pthread_h")
+
+dnl check for dlfcn in order to set ldflags
+AM_CONDITIONAL(WITHDLFCN, test yes = "$ac_cv_header_dlfcn_h")
+
+
+dnl warning: the three next AC_* are for autoconf V?.?.?
+dnl if autoconf refuse them, comment the three line and
+dnl uncomment the line just above
+dnl AC_DEFINE(HAVE_DECL__DYNAMIC)
+
+AC_CHECK_DECLS(_DYNAMIC, , echo "INFO: it seems to be a solaris architecture...", [#include <link.h>] )
+
+dnl test for the kind of Dyn type: Elf32_Dyn or Elf64_Dyn
+dnl   used for solaris, as they don't provide the ElfW(?) macro
+AC_CHECK_TYPES(Elf32_Dyn , , , [#include <link.h>])
+AC_CHECK_TYPES(Elf64_Dyn , , , [#include <link.h>])
+
+
+
+
+
+dnl difficult: check for __malloc_hook
+AC_MSG_CHECKING([for valid hooks in malloc.h ...])
+AC_TRY_COMPILE([#ifndef _MALLOC_INTERNAL
+#define	_MALLOC_INTERNAL
+#endif
+#include <features.h>
+#include <malloc.h>],
+		[void *ptr_test;
+ptr_test = (void*)__malloc_hook;
+ptr_test = (void*)__free_hook;
+ptr_test = (void*)__realloc_hook;
+ptr_test = (void*)__memalign_hook;
+], valid_hooks=yes, valid_hooks=no)
+
+dnl now test the result
+if test yes = "${valid_hooks}"
+  then
+    AC_DEFINE(HAVE_VALID_HOOKS)
+    AC_MSG_RESULT([ yes])
+  else
+    AC_MSG_RESULT([ no])
+fi
+
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_STRUCT_TM
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+
+
+dnl Checks for library functions.
+AC_CHECK_FUNCS(gettimeofday strdup strerror getenv setenv unsetenv)
+
+
+dnl Test for pthread presence
+if test yes != "$ac_cv_header_pthread_h" ;
+  then AC_DEFINE(FC_NO_THREAD)
+       echo "WARNING: no 'pthread.h' on your system."
+       echo "         profiling threads will be switched"
+       echo "         to multi-process mode (FORK)."
+fi
+
+dnl Test for ipc/shm
+if test yes != "$ac_cv_header_sys_ipc_h" || test yes != "$ac_cv_header_sys_shm_h";
+  then
+       echo "FATAL: you do not have 'sys/ipc.h' and/or 'sys/shm.h'"
+       echo "       needed for communication system."
+       echo "       Try to install it before. Sorry."
+       exit
+fi
+
+dnl Test for dlfcn presence
+if test yes != "$ac_cv_header_dlfcn_h" ;
+  then AC_DEFINE(FC_NO_DLFCN)
+       echo "WARNING: no 'dlfcn.h' on your system."
+       echo "         profiling programs using 'dlopen/dlcose/dlsym'"
+       echo "         will give erroneous results."
+fi
+
+dnl Test for getenv presence
+if test yes != "$ac_cv_func_getenv" ;
+  then AC_DEFINE(FC_NO_GETENV)
+  	echo "FATAL: you need a 'getenv' to specify options"
+  	echo "       to FunctionCheck. Sorry."
+	exit
+fi
+
+dnl Test for setenv presence
+if test yes != "$ac_cv_func_setenv" ;
+  then AC_DEFINE(FC_NO_SETENV)
+  	echo "WARNING: ressource files will not be available"
+  	echo "         because 'setenv' is not available."
+fi
+
+dnl Test for unsetenv presence
+if test yes != "$ac_cv_func_unsetenv" ;
+  then AC_DEFINE(FC_NO_UNSETENV)
+  	echo "WARNING: ressource files will not be available"
+  	echo "         because 'unsetenv' is not available."
+fi
+
+
+AC_OUTPUT(\
+	Makefile \
+	doc/Makefile \
+	test/Makefile \
+	src/Makefile \
+	src/fcmanager/Makefile \
+	src/fcdump/Makefile \
+	src/libfc/Makefile
+	)

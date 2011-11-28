@@ -1,0 +1,21 @@
+FunctionCheck is now splited into two parts:
+  - the profiler itself, which generates profile data files
+      called FunctionCheck (this archive)
+  - the dump program that convert profile data files into
+      human readable informations called FunctionDump
+
+They are two reasons for that:
+  - it is easier to deal with automake/autoconf/configure
+      with this architecture
+  - some may want to have the profiler and treat themselve
+      the profile data files, as the file format is quiet
+      easy to read and understand
+
+Jan 2002:
+  * I finished my PhD thesis last december. I have time
+      to work on functioncheck.
+  * starting from scratch the devel. of V3.0 version to
+      include many new ideas and patches from me and other
+      contributors.
+
+See ChangeLog for more details.

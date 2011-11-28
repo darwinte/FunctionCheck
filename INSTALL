@@ -1,0 +1,31 @@
+FunctionCheck V3.0 by Y.Perret
+
+
+Use 'make install' to install libfc.
+
+Installed files are:
+
+  In $(installdir)/lib/:
+    * libfc.a, libfc.so, libfc.so.0, libfc.so.0.0.0,
+      respectively the static and dynamic versions of the
+      profiling library
+
+  In $(installdir)/bin/:
+
+    * fcmanager,
+      used by 'libfc' to manage profile messages
+
+    * fc-config,
+      a script which gives flags and libs for compilation stage
+
+  In $(installdir)/info/:
+
+    * libfc.info,
+      the 'info' documentation
+
+  In $(installdir)/doc/FunctionCheck-3.0/:
+
+    * libfc.html,
+      the 'html' version of the documentation
+
+    * README, INSTALL, ChangeLog... and others

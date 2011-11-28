@@ -1,0 +1,41 @@
+FunctionCheck by Y.Perret (V3.0)
+----------------------------------
+
+
+Please, send me a mail if you have any trouble to configure,
+compile, install or run this project. It will help me to improve
+my code and make a more portable archive.
+
+
+
+Description of directories:
+---------------------------
+
+
+  ./         : the README, with details on FunctionCheck profiler,
+               the configure, the NEWS/ChangeLog which resume changes.
+
+  ./src      : directory which contains sources for the profiler.
+
+  ./doc      : documentation place. Documentation in HTML and .info format.
+
+  .test/     : some test examples for various situations (fork, threads,
+                 memory allocations, shared objects...)
+	       Note: in order to run examples, special targets are
+	         defined. For example to run the 'test' example you can
+		 use 'make run-test'. Try 'make help' for more details.
+
+
+How to compile/install:
+-----------------------
+
+ - extract the files from the archive
+ - enter the archive
+ - run the 'configure' script with needed options
+   additionnal option: --enable-debug: allow debug messages while profiling
+ - if you have problems to compile, try to run
+     'automake' and 'autoconf' before running 'configure'.
+
+Note: a special target 'help' is given with the makefile to remind you
+      the available targets.
+

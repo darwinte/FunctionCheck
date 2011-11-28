@@ -1,0 +1,1332 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<!-- Created on May, 7  2002 by texi2html 1.65 -->
+<!-- 
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Olaf Bachmann <obachman@mathematik.uni-kl.de>
+Send bugs and suggestions to <texi2html@mathematik.uni-kl.de>
+ 
+-->
+<HEAD>
+<TITLE>libfc: </TITLE>
+
+<META NAME="description" CONTENT="libfc: ">
+<META NAME="keywords" CONTENT="libfc: ">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<META NAME="Generator" CONTENT="texi2html 1.65">
+
+</HEAD>
+
+<BODY LANG="en" BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#800080" ALINK="#FF0000">
+
+<A NAME="SEC_Top"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1>libfc</H1></P><P>
+
+This manual describes the profiler called <CODE>libfc</CODE>, and how you
+can use it to determine which parts of a program are taking most of the
+execution time.  We assume that you know how to write, compile, and
+execute programs.  <CODE>libfc</CODE> was written by Yannick Perret.
+</P><P>
+
+Note: this info file is for `<SAMP>libfc</SAMP>' V3.0.9.
+</P><P>
+
+Note: this info file is initially based on <CODE>gprof</CODE>'s manual.
+Thanks to authors.
+</P><P>
+
+<BLOCKQUOTE><TABLE BORDER=0 CELLSPACING=0> 
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC1">1. Introduction to Profiling</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">What profiling means, and why it is useful.</TD></TR>
+</TABLE>
+
+<br>
+<TABLE BORDER=0 CELLSPACING=0>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC2">2. What it is Able to Do</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">What <CODE>libfc</CODE> is able to do.</TD></TR>
+</TABLE>
+
+<br>
+<TABLE BORDER=0 CELLSPACING=0>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC3">3. Compiling a Program for Profiling</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">How to compile your program for profiling.</TD></TR>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC4">4. Executing the Program</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">Executing your program to generate profile data</TD></TR>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC5">5. Interpreting <CODE>libfc</CODE>'s Output</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">Interpreting <CODE>libfc</CODE>'s output</TD></TR>
+</TABLE>
+
+<br>
+<TABLE BORDER=0 CELLSPACING=0>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC6">6. Details of Profiling</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">Details of how profiling is done</TD></TR>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC11">7. What <CODE>libfc</CODE> can't do or can't do well</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">What <CODE>libfc</CODE> can't do or con't do well</TD></TR>
+</TABLE></BLOCKQUOTE>
+<P>
+
+<HR SIZE=1>
+<A NAME="SEC1"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC2"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[ &lt;&lt; ]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC2"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<A NAME="Introduction"></A>
+<H1> 1. Introduction to Profiling </H1>
+<!--docid::SEC1::-->
+<P>
+
+Profiling allows you to learn where your program spent its time and which
+functions called which other functions while it was executing.  This
+information can show you which pieces of your program are slower than you
+expected, and might be candidates for rewriting to make your program
+execute faster.  It can also tell you which functions are being called more
+or less often than you expected.  This may help you spot bugs that had
+otherwise been unnoticed.
+</P><P>
+
+Since the profiler uses information collected during the actual execution
+of your program, it can be used on programs that are too large or too
+complex to analyze by reading the source.  However, how your program is run
+will affect the information that shows up in the profile data.  If you
+don't use some feature of your program while it is being profiled, no
+profile information will be generated for that feature.
+</P><P>
+
+<CODE>fcdump</CODE> profiler is divided into two main parts.  The first one is
+the profiling part, compouned by <CODE>libfc</CODE> library, which needs to
+be linked with the program to be profiled, and <CODE>fc_manager</CODE> program,
+which treats profiling data.  The second part is the <CODE>fcdump</CODE> program
+itself which extracts and displays profile information for your program.
+</P><P>
+
+Profiling has several steps:
+</P><P>
+
+<UL>
+<LI>
+You must compile and link your program with profiling enabled.
+See section <A HREF="libfc.html#SEC3">3. Compiling a Program for Profiling</A>.
+<P>
+
+<LI>
+You must execute your program to generate a profile data file.
+See section <A HREF="libfc.html#SEC4">4. Executing the Program</A>.
+<P>
+
+<LI>
+<P>
+
+You must analyze the profile data (see <CODE>fcdump</CODE> to perform this task).
+See section <A HREF="libfc.html#SEC5">5. Interpreting <CODE>libfc</CODE>'s Output</A>.
+</UL>
+<P>
+
+The next three chapters explain these steps in greater detail.
+</P><P>
+
+<A NAME="Features"></A>
+<HR SIZE="6">
+<A NAME="SEC2"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC1"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC3"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC3"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC3"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1> 2. What it is Able to Do </H1>
+<!--docid::SEC2::-->
+<P>
+
+<CODE>libfc</CODE> is a library which is linked to the program to
+profile. This library tracks actions performed by the profiled
+program during execution, and send these data to a program
+called <CODE>fc_manager</CODE>, which is started by <CODE>libfc</CODE>
+at initialization stage. <CODE>fc_manager</CODE> treats all these
+data and generates profile data file(s) which resume the
+execution characteristics.
+</P><P>
+
+In addition (since version V3.0.3) it allows to get memory
+leaks and invalid pointers given to <CODE>free</CODE> and <CODE>realloc</CODE>,
+with additionnal informations such as the place where it happend
+and the call-stack at this time.
+</P><P>
+
+Supported features are:
+</P><P>
+
+<UL>
+<LI>
+C/C++ programs, including constructors/destructors.
+<P>
+
+<LI>
+Multi-process/multi-thread programs, generating separate profile data
+files for each of them. Of course single-process/no-thread programs
+can be profiled too.
+<P>
+
+<LI>
+Profile highly configurable at execution time, via shell variables or
+ressource files.
+<P>
+
+<LI>
+Memory leaks during execution.
+<P>
+
+</UL>
+<P>
+
+<A NAME="Compiling"></A>
+<HR SIZE="6">
+<A NAME="SEC3"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC2"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC4"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC4"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC4"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1> 3. Compiling a Program for Profiling </H1>
+<!--docid::SEC3::-->
+<P>
+
+The first step in generating profile information for your program is
+to compile and link it with profiling enabled. Remember that <CODE>libfc</CODE>
+can only be used with <CODE>gcc</CODE> V2.95.2 or higher.
+</P><P>
+
+To compile a source file for profiling, you have to specify a set
+of options to <CODE>gcc</CODE> at compilation and link stages.
+These options can be given by <CODE>fc-config</CODE> script.
+</P><P>
+
+Just add `<SAMP>`fc-config --cflags`</SAMP>' in your compilation lines.
+This is in addition to the options you normally give to <CODE>gcc</CODE>.
+</P><P>
+
+To link the program for profiling, use again <CODE>fc-config</CODE> program.
+Just add `<SAMP>`fc-config --libs`</SAMP>' in your link line. As previously,
+this is in addition to the options you normally give to <CODE>gcc</CODE>
+or <CODE>ld</CODE>.
+</P><P>
+
+Here are some examples:
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>gcc `fc-config --cflags` -c myprog.c
+gcc `fc-config --cflags` -c utils.c
+gcc `fc-config --libs` -o myprog myprog.o utils.o
+</pre></td></tr></table></P><P>
+
+You can also use <CODE>fc-config</CODE> with a command
+that both compiles and links:
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>gcc `fc-config --cflags` `fc-config --libs` -o myprog myprog.c utils.c
+</pre></td></tr></table></P><P>
+
+or even shorter:
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>gcc `fc-config --cflags-libs` -o myprog myprog.c utils.c
+</pre></td></tr></table></P><P>
+
+If you compile only some of the modules of the program with
+profiling options, you
+can still profile the program, but you won't get complete information about
+the modules that were compiled without profiling options.
+The only information you get is the time spend in them, seen as local
+time for the calling functions.
+</P><P>
+
+Note that some strange results may be generated if a profiled function
+calls a not profiled function which calls a profiled function...
+</P><P>
+
+The script <CODE>fc-config</CODE> is generated when you build <CODE>libfc</CODE>.
+In particular it set the correct version number and the pathes to
+access to the library <CODE>libfc</CODE> and the profile manager
+<CODE>fc_manager</CODE>. In addition, it set some flags needed by your
+compiled programs in order to allow profile.
+Special options exist for <CODE>fc-config</CODE>:
+</P><P>
+
+<UL>
+
+<LI>
+`<SAMP>--version</SAMP>' gives the version of the installed <CODE>libfc</CODE>
+<P>
+
+<LI>
+`<SAMP>--cflags</SAMP>' gives all the needed options to compile an object
+for profiling
+<P>
+
+<LI>
+`<SAMP>--libs</SAMP>' gives all the needed options to link objects
+in order to generate a program ready for profiling
+<P>
+
+<LI>
+`<SAMP>--cflags-libs</SAMP>' or `<SAMP>--libs-cflags</SAMP>' gives all the needed
+options to compile and link on the same <CODE>gcc</CODE> line
+<P>
+
+</UL>
+<P>
+
+In addition to basic needs for compilation/link, <CODE>fc-config</CODE>
+redirects some functions for internal treatments. These functions are
+<CODE>fork</CODE>, <CODE>pthread_create</CODE>, <CODE>dlopen</CODE>, <CODE>dlsym</CODE>
+and <CODE>dlclose</CODE>. The redirection is made using the
+`<SAMP>-Dsymbol=new_symbol</SAMP>' option of <CODE>gcc</CODE>.
+</P><P>
+
+It may be a problem for your program if you still redirect these
+functions (such as with `<SAMP>#define</SAMP>' macro commands). If you
+have troubles with that, you can disable the redirections
+using optional flags. These flags are `<SAMP>--no-dl</SAMP>' to prevent
+redirection of <CODE>dlfcn</CODE> functions, `<SAMP>--no-fork</SAMP>' to prevent
+<CODE>fork</CODE> redirection and `<SAMP>--no-thread</SAMP>' to prevent
+<CODE>pthread_create</CODE> redirection.
+</P><P>
+
+Warning: these options MUST be given AFTER the action flags
+(one of `<SAMP>--cflags</SAMP>', `<SAMP>--libs</SAMP>' or `<SAMP>--cflags-libs</SAMP>').
+</P><P>
+
+<A NAME="Executing"></A>
+<HR SIZE="6">
+<A NAME="SEC4"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC3"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC5"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC5"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC5"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1> 4. Executing the Program </H1>
+<!--docid::SEC4::-->
+<P>
+
+Once the program is compiled for profiling, you must run it in order to
+generate the profile data file(s).  Simply run the program
+as usual, using the normal arguments, file names, etc.  The program should
+run normally, producing the same output as usual.  It will, however, run
+somewhat slower than normal because of the time spent collecting
+the profile data.
+</P><P>
+
+The way you run the program--the arguments and input that you give
+it--may have a dramatic effect on what the profile information shows.  The
+profile data will describe the parts of the program that were activated for
+the particular input you use.  For example, if the first command you give
+to your program is to quit, the profile data will show the time used in
+initialization and in cleanup, but not much else.
+</P><P>
+
+<CODE>fc_manager</CODE> will write the profile data into a file called
+`<TT>functioncheck.fc</TT>' just before exiting. 
+If there is already a file called `<TT>functioncheck.fc</TT>',
+its contents are overwritten.  You can specify an other file name
+by setting the shell variable `<SAMP>FC_DUMP_NAME</SAMP>' with the needed file name.
+</P><P>
+
+If your program uses <CODE>fork()</CODE> function or multi-thread,
+a profile data file will be generated for each of the process/thread
+existing during the execution.  In this case, the processes will dump into
+`<TT>functioncheck.fc.NNN</TT>' or whatever name you set,
+with `<SAMP>NNN</SAMP>' an identifier of each process (PID or pthread_self()).
+</P><P>
+
+The `<TT>functioncheck.fc</TT>' file is written in the program's
+<EM>current working directory</EM> at the time it starts.
+You can change the directory used by setting the shell variable
+`<SAMP>FC_DUMP_PATH</SAMP>' with the needed path name.
+</P><P>
+
+If several processes are present, a file named `<TT>functioncheck.fcd</TT>' is
+generated. This file contains a description of all files generated by
+the profiler. For each of them, the corresponding identifier and the file
+name generated are given.
+Moreover, a try is make
+to display the launching tree of the processes.
+</P><P>
+
+The default mode for <CODE>libfc</CODE> is the `<SAMP>FORK</SAMP>' mode.
+In this mode you can profile single-process programs, multi-processes
+programs (programs which use <CODE>fork()</CODE> function) and multi-threads
+program.
+</P><P>
+
+In this mode threads will be seen as processes and identified by
+their process-id (PID). This is possible because linux threads use
+different processes to run threads. Moreover some FORK specific treatments
+are made which are not useful for threaded cases.
+You may switch <CODE>libfc</CODE> to `<SAMP>THREAD</SAMP>' mode if you intend to profile a
+multi-thread program.
+</P><P>
+
+In `<SAMP>FORK</SAMP>' mode, single-process programs can be profiled without
+any restriction. But if you know that your program will never uses
+<CODE>fork()</CODE> calls, you can switch to `<SAMP>SINGLE</SAMP>' mode in order to
+optimize treatments performed by <CODE>libfc</CODE> (it reduce the cost
+of the treatments performed during profile).
+</P><P>
+
+Please note that using `<SAMP>SINGLE</SAMP>' mode with multi-processes or
+multi-threaded programs will give erroneous profile data files.
+</P><P>
+
+See below for profile-mode selection.
+</P><P>
+
+Notes:
+</P><P>
+
+<CODE>fc_manager</CODE> program must be in the `<SAMP>PATH</SAMP>' of your profiled program,
+and the <CODE>libfc</CODE> library must be in the `<SAMP>LD_LIBRARY_PATH</SAMP>'.
+</P><P>
+
+Several shell variables can be used to change profile behavior:
+</P><P>
+
+<UL>
+
+<LI>
+`<SAMP>FC_TIME_MODE</SAMP>': set the kind of time used for profiling. The
+possible values are `<SAMP>ext</SAMP>', `<SAMP>sys</SAMP>' and `<SAMP>cpu</SAMP>'.
+`<SAMP>ext</SAMP>' means that the real clock time is used. In this mode
+a function that runs during one second will appear with the same
+time in the profile data files. `<SAMP>sys</SAMP>' and `<SAMP>cpu</SAMP>' are
+(for the moment) the same. The time used is the CPU time. Time
+spend by the system in other programs, input/output treatments...
+is not taked in count. In most case this mode gives really small
+execution time. The default value is `<SAMP>ext</SAMP>'.
+<P>
+
+<LI>
+`<SAMP>FC_NO_FORK</SAMP>': if set, <CODE>libfc</CODE> will switch to `<SAMP>SINGLE</SAMP>'
+mode. In this mode, you can only profile single-process programs,
+but treatments are optimized.
+<P>
+
+<LI>
+`<SAMP>FC_ALLOW_THREAD</SAMP>': if set, <CODE>libfc</CODE> will switch to `<SAMP>THREAD</SAMP>'
+mode. In this mode, you can profile multi-threads programs.
+Do not use this mode with multi-processes programs, because some
+informations may be discared in the profile data files.
+<P>
+
+<LI>
+`<SAMP>FC_DUMP_NAME</SAMP>': if not set, the default name for profile data
+files is `<SAMP>functioncheck</SAMP>', plus the extention (`<SAMP>.fc</SAMP>').
+You can set your own name in this variable.
+<P>
+
+<LI>
+`<SAMP>FC_DUMP_PATH</SAMP>': if not set, profile data files are generated
+in the directory in which your program starts. You can specify a
+new path in this variable.
+<P>
+
+<LI>
+`<SAMP>FC_HELP</SAMP>': if set, <CODE>libfc</CODE> will display a summary of
+the available options and stops.
+<P>
+
+<LI>
+`<SAMP>FC_QUIET</SAMP>': if set, <CODE>libfc</CODE> will not display any information
+message that are normaly given at the begin and the end of the
+program execution.
+<P>
+
+<LI>
+`<SAMP>FC_DEBUG</SAMP>': if <CODE>libfc</CODE> and <CODE>fc_manager</CODE> were compiled
+with debug enabled, this variable activates the debug mode
+(only usefull for <CODE>libfc</CODE> developpers).
+<P>
+
+<LI>
+`<SAMP>FC_STACK_SIZE</SAMP>': set the initial stack size used by
+<CODE>fc_manager</CODE>. The default value is 512.
+<P>
+
+<LI>
+`<SAMP>FC_GRAPH_SIZE</SAMP>': set the initial graph-table size used by
+<CODE>fc_manager</CODE>. The default value is 512.
+<P>
+
+<LI>
+`<SAMP>FC_FUNCTION_SIZE</SAMP>': set the initial function-table size used by
+<CODE>fc_manager</CODE>. The default value is 512.
+<P>
+
+<LI>
+`<SAMP>FC_BUFFER_SIZE</SAMP>': (not used) set the buffer size used for communications
+between <CODE>libfc</CODE> and
+<CODE>fc_manager</CODE>. The default value is 4096.
+<P>
+
+<LI>
+`<SAMP>FC_MEMORY</SAMP>': if set, <CODE>libfc</CODE> will profile memory
+operations during execution. <CODE>malloc</CODE>, <CODE>free</CODE>, <CODE>realloc</CODE>
+and <CODE>memalign</CODE> are hooked in order to manage the state of
+the memory blocks used during execution. At exit, each remaining
+block is dropped in the profile data file (for each process).
+<P>
+
+In addition the call-stack at allocation time is stored. You can
+set the call-stack depth stored with `<SAMP>FC_MEMORY_STACK</SAMP>' variable
+(default depth is 4).
+</P><P>
+
+</UL>
+<P>
+
+When running your profiled program, some informations are
+given by <CODE>libfc</CODE> and <CODE>fc_manager</CODE> (if you set the
+`<SAMP>FC_QUIET</SAMP>' variable, no informations are given).
+</P><P>
+
+First, <CODE>libfc</CODE> gives the list of current options and
+values used for the profile. It looks like:
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>FCheck: Starting FunctionCheck V3.0 by Y.Perret
+FCheck: Profile parameters are:
+FCheck:   functions table size : 512
+FCheck:       stack table size : 512
+FCheck:             graph size : 512
+FCheck:            buffer size : 4096
+FCheck:              time mode : ext
+FCheck:         profiling mode : forks allowed / no threads
+FCheck:             debug mode : off
+FCheck:       profiling memory : off
+FCheck:         dump-file name : functioncheck
+FCheck:         dump-file path : ./
+FCheck: 
+</pre></td></tr></table></P><P>
+
+Regarding to the variables you set before running your program,
+the values can be different. In particular the profile mode
+is `<SAMP>forks allowed / no threads</SAMP>' in the (default) `<SAMP>FORK</SAMP>'
+mode, is `<SAMP>no forks / no threads</SAMP>' in `<SAMP>SINGLE</SAMP>' mode and
+is `<SAMP>no forks / threads allowed</SAMP>' in `<SAMP>THREAD</SAMP>' mode.
+</P><P>
+
+Then you will see the profile manager (<CODE>fc_manager</CODE>) starting:
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>FCMng: Profile manager: running [NNN]
+</pre></td></tr></table>where 'NNN' is the process-id of the profile manager.
+</P><P>
+
+Your program will then run as usual. At the end of the execution,
+the profile manager will alert you:
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>FCMng: communication pipe closed. end of profiled program.
+FCMng: Profile file is './/functioncheck.fc'
+FCMng: Profile manager: exit
+</pre></td></tr></table>The profile manager gives the name of the generated profile data file.
+</P><P>
+
+If more than one profile data file is generated (multi-processes or
+multi-threads), each file is post-fixed with the identifier of
+the corresponding entity (the process-id or the thread-id).
+In each cases, a summary file called `<SAMP>functioncheck.fcd</SAMP>' is
+generated. This file describe all the .fc files generated: name,
+corresponding process/thread, parent for processes).
+In this case, the manager prints the name of the generated
+summary, which default name is `<SAMP>functioncheck.fdc</SAMP>'.
+Here is a sample of `<SAMP>functioncheck.fdc</SAMP>' content:
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>FunctionCheck descriptor file.
+2 processes treated.
+Treatments started at: 70/00/01 01:07:56
+Treatments ended at: 102/02/15 13:13:00
+
+Process id: 1024
+    parent: pthread_create
+      file: .//functioncheck_thread.fc.1024
+
+Process id: 1026
+    parent: pthread_create
+      file: .//functioncheck_thread.fc.1026
+</pre></td></tr></table></P><P>
+
+Note: if some troubles occur during profile (profile mode do not
+correspond to the current program) warning or fatal messages
+can be displayed during execution.
+</P><P>
+
+<A NAME="Output"></A>
+<HR SIZE="6">
+<A NAME="SEC5"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC4"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1> 5. Interpreting <CODE>libfc</CODE>'s Output </H1>
+<!--docid::SEC5::-->
+<P>
+
+The format of .fc files is very simple and can be read as
+a text file. In the description below, the corresponding
+format to use in <CODE>scanf</CODE> is given at the en of each line.
+Lines that contain `<SAMP>(...n...)</SAMP>' indicate that it is
+a list of 'n' elements.
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>functioncheck_v3.0			%s
+unique_ID				%s
+time_mode				%d
+profile_mode				%d
+PID					%d
+PPID					%d
+exec_time				%u
+Ncg					%d
+from to	nb				%p%p%d
+from to	nb				%p%p%d
+(...Ncg...)
+from to	nb				%p%p%d
+Nf
+fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%u%u%u%u
+fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%u%u%u%u
+(...Nf...)
+fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%u%u%u%u
+Ndl
+addr name				%p%s
+addr name				%p%s
+(...Ndl...)
+addr name				%p%s
+nb_elements
+addr size loc reloc stk stk ... NULL	%p%d%p%p%p%p...%p
+addr size loc reloc stk stk ... NULL	%p%d%p%p%p%p...%p
+(...nb_elements...)
+addr size loc reloc stk stk ... NULL	%p%d%p%p%p%p...%p
+nb_elements
+loc pointer stack stack ... NULL	%p%p%p%p...%p
+loc pointer stack stack ... NULL	%p%p%p%p...%p
+(...nb_elements...)
+loc pointer stack stack ... NULL	%p%p%p%p...%p
+nb_elements
+loc pointer stack stack ... NULL	%p%p%p%p...%p
+loc pointer stack stack ... NULL	%p%p%p%p...%p
+(...nb_elements...)
+loc pointer stack stack ... NULL	%p%p%p%p...%p
+</pre></td></tr></table></P><P>
+
+The first line (`<SAMP>functioncheck_v3.0</SAMP>') is the header
+of the file, to check if it was generated by <CODE>libfc</CODE> V3.0.
+</P><P>
+
+The `<SAMP>unique_ID</SAMP>' is a string which is unique for a given
+execution of a program. This is used in case of multi-processes
+or multi-threads program, as each of the generated
+`<SAMP>functioncheck.fc.NNN</SAMP>' files share the same unique ID
+(useful to group several files to obtain an overview of the
+program execution, including all its processes/threads).
+</P><P>
+
+`<SAMP>time_mode</SAMP>' is an <CODE>int</CODE> that indicate the time unit
+used during profile. Possible values are given in the file
+`<SAMP>src/fc_blobal.h</SAMP>' and are: 1: "ext", 2: "cpu" and 3: "sys".
+Any other value is invalid.
+</P><P>
+
+`<SAMP>profile_mode</SAMP>' is an <CODE>int</CODE> that indicate the profile mode
+used during profile. Possible values are given in the file
+`<SAMP>src/fc_blobal.h</SAMP>' and are: 1: `<SAMP>SINGLE</SAMP>',
+2: `<SAMP>FORK</SAMP>' and 3: `<SAMP>THREAD</SAMP>'.
+Any other value is invalid.
+</P><P>
+
+`<SAMP>PID</SAMP>' and `<SAMP>PPID</SAMP>' give respectively the process identifier
+and the process identifier current process parent. In `<SAMP>SINGLE</SAMP>'
+or `<SAMP>FORK</SAMP>' mode identifiers are process-id (PID). In `<SAMP>THREAD</SAMP>'
+mode identifiers are thread-id, obtain by <CODE>pthread_self()</CODE>
+function. Note that in `<SAMP>THREAD</SAMP>' mode the parent identifier
+is not relevant.
+</P><P>
+
+The `<SAMP>exec_time</SAMP>' is the total number of microsecond elasped
+in this process. In fact this time is the difference between the
+last and the first events known for this process.
+</P><P>
+
+`<SAMP>Ncg</SAMP>' indicates the number of call-graph arcs to read. Each
+comming lines are pairs of `<SAMP>from</SAMP>' and `<SAMP>to</SAMP>' addresses.
+Each line defines a call to address `<SAMP>to</SAMP>', from address
+`<SAMP>from</SAMP>' (in the program address space). The following number
+is the number of time this call was performed during the execution.
+</P><P>
+
+`<SAMP>Nf</SAMP>' indicates the number of functions entries to read. Each
+line describes statistics for a function. `<SAMP>fnc</SAMP>' is the
+function symbol address. `<SAMP>calls</SAMP>' is the total number of calls
+to this function. `<SAMP>loc</SAMP>' and `<SAMP>tot</SAMP>' are respectively
+the local and total time spend in the function. Total time is the
+time of presence of the function is the call-stack, and local time
+is this time minus the time spend in child functions. `<SAMP>tmin</SAMP>' and
+`<SAMP>tmax</SAMP>' are respectively the minimum and maximum total time
+spend in the function for one call. If a function is called only once,
+`<SAMP>tmin</SAMP>' and  `<SAMP>tmax</SAMP>' will be the same. `<SAMP>lmin</SAMP>'
+and `<SAMP>lmax</SAMP>' are the same but for local time.
+ 
+`<SAMP>Ndl</SAMP>' indicates the number of dynamic library to read.
+Each line gives an additionnal dynamic library that was used
+by the program at execution time. `<SAMP>addr</SAMP>' is the base address
+of the library (in the program address space) and `<SAMP>name</SAMP>'
+is the library name.
+</P><P>
+
+Only files from version higher or equal to V3.0.3 are concerned
+by this part.
+</P><P>
+
+`<SAMP>nb_elements</SAMP>' indicates the number of memory leaks.
+From left to right, the entries are: address returned by the
+<CODE>malloc</CODE> or <CODE>memalign</CODE>, initial size of the block
+(reallocation sizes are not stored), symbol address where the
+allocation happends, symbol address where the reallocation happends
+(or NULL else), and then the call-stack corresponding to the
+allocation, ended by a NULL pointer.
+</P><P>
+
+`<SAMP>nb_elements</SAMP>' indicates the number of invalid free.
+From left to right, the entries are: symbol address where the
+invalid <CODE>free</CODE> was called, the pointer passed to <CODE>free</CODE>,
+and then the call-stack corresponding to the <CODE>free</CODE>,
+ended by a NULL pointer.
+</P><P>
+
+`<SAMP>nb_elements</SAMP>' indicates the number of invalid reallocation.
+From left to right, the entries are: symbol address where the
+invalid <CODE>realloc</CODE> was called, the pointer passed to <CODE>realloc</CODE>,
+and then the call-stack corresponding to the <CODE>realloc</CODE>,
+ended by a NULL pointer.
+</P><P>
+
+Note that any of the number of elements can be equal to zero,
+except for the number of arcs and the number of functions.
+</P><P>
+
+<A NAME="Details"></A>
+<HR SIZE="6">
+<A NAME="SEC6"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC5"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC7"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC11"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC11"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1> 6. Details of Profiling </H1>
+<!--docid::SEC6::-->
+<P>
+
+More details about how <CODE>libfc</CODE> library perform its job.
+</P><P>
+
+<BLOCKQUOTE><TABLE BORDER=0 CELLSPACING=0> 
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC7">6.1 Implementation of Profiling</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">How the library collects profiling information</TD></TR>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC8">6.2 Profiling Data File Format</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">Format of `<SAMP>functioncheck.fc</SAMP>' files</TD></TR>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC9">6.3 <CODE>fc_manager</CODE>'s Internal Operation</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP"><CODE>fc_manager</CODE>'s internal operation</TD></TR>
+<TR><TD ALIGN="left" VALIGN="TOP"><A HREF="libfc.html#SEC10">6.3.1 Debugging during execution</A></TD><TD>&nbsp;&nbsp;</TD><TD ALIGN="left" VALIGN="TOP">Using debug while executing programs</TD></TR>
+</TABLE></BLOCKQUOTE>
+<P>
+
+<A NAME="Implementation"></A>
+<HR SIZE="6">
+<A NAME="SEC7"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC8"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC11"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H2> 6.1 Implementation of Profiling </H2>
+<!--docid::SEC7::-->
+<P>
+
+The <CODE>libfc</CODE> library uses a feature of <CODE>gcc</CODE> V2.95.2
+(or higher) called `<SAMP>-finstrument-functions</SAMP>'.  This option
+makes `<SAMP>gcc</SAMP>' to add to every functions a call at enter and at exit.
+The <CODE>libfc</CODE> library provides these two functions called
+<CODE>void __cyg_profile_func_enter(void *this_fn, void *call_site)</CODE>
+and <CODE>void __cyg_profile_func_exit(void *this_fn, void *call_site)</CODE>.
+</P><P>
+
+The <CODE>libfc</CODE> library also provides functions called
+<CODE>_init()</CODE> and <CODE>_fini()</CODE> to perform some initializations
+and cleanups before and after the profiled program starts or stops.
+</P><P>
+
+The <CODE>libfc</CODE> library starts the <CODE>fc_manager</CODE> program,
+and send to it all the enter/exit that occur during the program
+execution. `<SAMP>fc_manager</SAMP>' manages a stack of function calls and a
+list of functions.  For each of them, the number of calls, the
+time spend in them (local and total) is computed.  Moreover the
+execution call-graph is stored in order to be saved with profile data.
+</P><P>
+
+At exit time (when the stream between the program and `<SAMP>fc_manager</SAMP>'
+is cutted), all these data are dumped into a file
+in order to be analysed.
+</P><P>
+
+Note: the <CODE>libfc</CODE>/<CODE>fc_manager</CODE> pair only works with
+symbol addresses of functions, and not with names.
+Names can be extracted from the program and the library list
+using <CODE>binutils</CODE> tools.
+</P><P>
+
+<A NAME="File Format"></A>
+<HR SIZE="6">
+<A NAME="SEC8"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC7"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC9"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC11"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H2> 6.2 Profiling Data File Format </H2>
+<!--docid::SEC8::-->
+<P>
+
+Here is a short description of profile data file format.
+A more detailled version is given above.
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=example><pre>functioncheck_v3.0			%s
+unique_ID				%s
+time_mode				%d
+profile_mode				%d
+PID					%d
+PPID					%d
+exec_time				%lld
+Ncg					%d
+from to					%p%p
+from to					%p%p
+(...Ncg...)
+from to					%p%p
+Nf
+fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%lld%lld%lld%lld
+fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%lld%lld%lld%lld
+(...Nf...)
+fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%lld%lld%lld%lld
+Ndl
+addr name				%p%s
+addr name				%p%s
+(...Ndl...)
+addr name				%p%s
+nb_elements				%d
+blk size loc reloc stk stk ... NULL	%p%u%p%p%p...%p
+blk size loc reloc stk stk ... NULL	%p%u%p%p%p...%p
+(...nb_elements...)
+blk size loc reloc stk stk ... NULL	%p%u%p%p%p...%p
+nb_elements				%d
+loc ptr stk stk ... NULL		%p%p%p...%p
+loc ptr stk stk ... NULL		%p%p%p...%p
+(...nb_elements...)
+loc ptr stk stk ... NULL		%p%p%p...%p
+nb_elements				%p
+loc ptr stk stk ... NULL		%p%p%p...%p
+loc ptr stk stk ... NULL		%p%p%p...%p
+(...nb_elements...)
+loc ptr stk stk ... NULL		%p%p%p...%p
+</pre></td></tr></table></P><P>
+
+<A NAME="Internals"></A>
+<HR SIZE="6">
+<A NAME="SEC9"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC8"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC10"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC11"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H2> 6.3 <CODE>fc_manager</CODE>'s Internal Operation </H2>
+<!--docid::SEC9::-->
+<P>
+
+Here are the treatments performed by <CODE>fc_manager</CODE> program for
+each enter/exit of functions:
+</P><P>
+
+At the first call:
+</P><P>
+
+Initializations of hash-tables, options, stack.
+</P><P>
+
+When entering a function:
+<DL COMPACT>
+<DT>*
+<DD>add the call in the call-graph (if not still present)
+<DT>*
+<DD>check if the function is still registered, and register it if it is not
+the case.
+<DT>*
+<DD>store the function and its entering time in the stack
+<DT>*
+<DD>compute the additional local time for the calling function. It is the
+time between the last active time of this function minus the current time.
+</DL>
+<P>
+
+When exiting a function:
+<DL COMPACT>
+<DT>*
+<DD>compute the total execution time (difference between entering time and
+current time)
+<DT>*
+<DD>increment number of calls
+<DT>*
+<DD>update min/max values
+<DT>*
+<DD>compute the additional local time for the calling function. It is the
+time between the last active time of this function minus the current time.
+<P>
+
+</DL>
+<P>
+
+When leaving the program:
+</P><P>
+
+Creates the profile data file and dumps data into it.  Freed allocated
+tables.
+</P><P>
+
+Some specific treatments are performed in `<SAMP>FORK</SAMP>' or `<SAMP>THREAD</SAMP>'
+modes.
+</P><P>
+
+When receiving a enter/exit message, a test is done to see if the
+process identifier exists. If not a new context is create for
+this new process. In any cases, informations are added in the context
+of the process.
+</P><P>
+
+In `<SAMP>FORK</SAMP>' mode, special treatments are performed at context
+creation in order to allow exits from unkown functions (in the
+new context).
+</P><P>
+
+<A NAME="Debugging"></A>
+<HR SIZE="6">
+<A NAME="SEC10"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC9"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC11"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC6"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC11"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H3> 6.3.1 Debugging during execution </H3>
+<!--docid::SEC10::-->
+<P>
+
+In order to allow debug during execution, you have to compile
+the <CODE>libfc</CODE> library  and the <CODE>fc_manager</CODE>
+with compilation flag `<SAMP>-DFC_DEBUG</SAMP>'.
+This allows you to use the shell variable `<SAMP>FC_DEBUG</SAMP>'.
+</P><P>
+
+<A NAME="Limits"></A>
+<HR SIZE="6">
+<A NAME="SEC11"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC10"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[ &gt; ]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[ &lt;&lt; ]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[ &gt;&gt; ]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1> 7. What <CODE>libfc</CODE> can't do or can't do well </H1>
+<!--docid::SEC11::-->
+<P>
+
+<CODE>libfc</CODE> have some limitations or things that are done in a bad way.
+</P><P>
+
+<DL COMPACT>
+
+<DT>*
+<DD>For V3.0.3+: memory profiling is performed using `<SAMP>hooks</SAMP>' from
+the <CODE>libc</CODE>'s <CODE>malloc.h</CODE>. Without <CODE>libc</CODE> this part
+of the profiler will not be available. In addition if your program
+gives its own hooks, the given leaks will be correct but all
+locations will be invalid, as they will reflect your own hooks,
+and not your program.
+<P>
+
+<DT>*
+<DD>profile of objects opended with <CODE>dlopen()</CODE> may be corrupted.
+This is due to the fact that functions addresses are re-used when
+an object is closed. In addition it is not possible to know the
+object name (it is not given in the profile data file) and the
+base address during execution.
+<P>
+
+The only known way to prevent this is a hack:
+</P><P>
+
+just link your program with all the dynamic objects that might
+be opended with <CODE>dlopen()</CODE>. Like this, addresses are pre-reserved
+in your program address space, and no address collision will
+occur, and objects names will be available.
+</P><P>
+
+<DT>*
+<DD>the functions table in <CODE>fc_manager</CODE> is a hash-table. It is so
+very difficult to resize it at low cost. At this time, profile
+is aborted in case of function-table overflow. If this occur, set
+a higher function-table size with `<SAMP>FC_FUNCTION_SIZE</SAMP>' variable.
+<P>
+
+<DT>*
+<DD>in `<SAMP>FORK</SAMP>' mode, the time elapsed between a <CODE>fork()</CODE> call
+and the next event (enter or exit from a function) is discarded in
+the child process. This will not be corrected, as I don't know how
+to correct it!
+<P>
+
+<DT>*
+<DD>when exiting your program with 
+with a `<SAMP>core dump</SAMP>' technic, the time elapsed between the
+last event (enter or exit in a function) and the time of the
+program crash is discarded.
+<P>
+
+<DT>*
+<DD>an absolute limit of 72 mins of execution is allowed 
+between two successive actions (actions are enters or exits
+from profiled functions). If a function do nothing else than
+local treatments (calls to non-profiled functions are viewed
+as local treatments), corresponding times will be erroneous.
+<P>
+
+<DT>*
+<DD>if your program provides its own <CODE>_init()</CODE> and <CODE>_fini()</CODE>
+functions, I'm not sure of the <CODE>gcc</CODE> behavior, but I think
+the compilation will failed.
+<P>
+
+<DT>*
+<DD>if the profile mode is not adapted to your program (i.e. `<SAMP>SINGLE</SAMP>'
+mode with a multi-threads program) the <CODE>fc_manager</CODE> will
+have difficulties to treat erroneous data received. You may have
+SEVERAL warning messages from <CODE>fc_manager</CODE>, and trying to read
+the generated profile data file make no sense.
+<P>
+
+It's not my fault! Set the adapted profile mode! :o)
+</P><P>
+
+</DL>
+<P>
+
+<HR SIZE="6">
+<A NAME="SEC_Contents"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1>Table of Contents</H1>
+<BLOCKQUOTE>
+<A NAME="TOC1" HREF="libfc.html#SEC1">1. Introduction to Profiling</A>
+<BR>
+<A NAME="TOC2" HREF="libfc.html#SEC2">2. What it is Able to Do</A>
+<BR>
+<A NAME="TOC3" HREF="libfc.html#SEC3">3. Compiling a Program for Profiling</A>
+<BR>
+<A NAME="TOC4" HREF="libfc.html#SEC4">4. Executing the Program</A>
+<BR>
+<A NAME="TOC5" HREF="libfc.html#SEC5">5. Interpreting <CODE>libfc</CODE>'s Output</A>
+<BR>
+<A NAME="TOC6" HREF="libfc.html#SEC6">6. Details of Profiling</A>
+<BR>
+<BLOCKQUOTE>
+<A NAME="TOC7" HREF="libfc.html#SEC7">6.1 Implementation of Profiling</A>
+<BR>
+<A NAME="TOC8" HREF="libfc.html#SEC8">6.2 Profiling Data File Format</A>
+<BR>
+<A NAME="TOC9" HREF="libfc.html#SEC9">6.3 <CODE>fc_manager</CODE>'s Internal Operation</A>
+<BR>
+<BLOCKQUOTE>
+<A NAME="TOC10" HREF="libfc.html#SEC10">6.3.1 Debugging during execution</A>
+<BR>
+</BLOCKQUOTE>
+</BLOCKQUOTE>
+<A NAME="TOC11" HREF="libfc.html#SEC11">7. What <CODE>libfc</CODE> can't do or can't do well</A>
+<BR>
+</BLOCKQUOTE>
+<HR SIZE=1>
+<A NAME="SEC_OVERVIEW"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1>Short Table of Contents</H1>
+<BLOCKQUOTE>
+<A NAME="TOC1" HREF="libfc.html#SEC1">1. Introduction to Profiling</A>
+<BR>
+<A NAME="TOC2" HREF="libfc.html#SEC2">2. What it is Able to Do</A>
+<BR>
+<A NAME="TOC3" HREF="libfc.html#SEC3">3. Compiling a Program for Profiling</A>
+<BR>
+<A NAME="TOC4" HREF="libfc.html#SEC4">4. Executing the Program</A>
+<BR>
+<A NAME="TOC5" HREF="libfc.html#SEC5">5. Interpreting <CODE>libfc</CODE>'s Output</A>
+<BR>
+<A NAME="TOC6" HREF="libfc.html#SEC6">6. Details of Profiling</A>
+<BR>
+<A NAME="TOC11" HREF="libfc.html#SEC11">7. What <CODE>libfc</CODE> can't do or can't do well</A>
+<BR>
+
+</BLOCKQUOTE>
+<HR SIZE=1>
+<A NAME="SEC_About"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[Index]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="libfc.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1>About this document</H1>
+This document was generated 
+using <A HREF="http://www.mathematik.uni-kl.de/~obachman/Texi2html
+"><I>texi2html</I></A>
+<P></P>  
+The buttons in the navigation panels have the following meaning:
+<P></P>
+<table border = "1">
+<TR>
+<TH> Button </TH>
+<TH> Name </TH>
+<TH> Go to </TH>
+<TH> From 1.2.3 go to</TH>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [ &lt; ] </TD>
+<TD ALIGN="CENTER">
+Back
+</TD>
+<TD>
+previous section in reading order
+</TD>
+<TD>
+1.2.2
+</TD>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [ &gt; ] </TD>
+<TD ALIGN="CENTER">
+Forward
+</TD>
+<TD>
+next section in reading order
+</TD>
+<TD>
+1.2.4
+</TD>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [ &lt;&lt; ] </TD>
+<TD ALIGN="CENTER">
+FastBack
+</TD>
+<TD>
+previous or up-and-previous section 
+</TD>
+<TD>
+1.1
+</TD>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [ Up ] </TD>
+<TD ALIGN="CENTER">
+Up
+</TD>
+<TD>
+up section
+</TD>
+<TD>
+1.2
+</TD>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [ &gt;&gt; ] </TD>
+<TD ALIGN="CENTER">
+FastForward
+</TD>
+<TD>
+next or up-and-next section
+</TD>
+<TD>
+1.3
+</TD>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [Top] </TD>
+<TD ALIGN="CENTER">
+Top
+</TD>
+<TD>
+cover (top) of document
+</TD>
+<TD>
+ &nbsp; 
+</TD>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [Contents] </TD>
+<TD ALIGN="CENTER">
+Contents
+</TD>
+<TD>
+table of contents
+</TD>
+<TD>
+ &nbsp; 
+</TD>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [Index] </TD>
+<TD ALIGN="CENTER">
+Index
+</TD>
+<TD>
+concept index
+</TD>
+<TD>
+ &nbsp; 
+</TD>
+</TR>
+<TR>
+<TD ALIGN="CENTER">
+ [ ? ] </TD>
+<TD ALIGN="CENTER">
+About
+</TD>
+<TD>
+this page
+</TD>
+<TD>
+ &nbsp; 
+</TD>
+</TR>
+</TABLE>
+<P></P>
+where the <STRONG> Example </STRONG> assumes that the current position 
+is at <STRONG> Subsubsection One-Two-Three </STRONG> of a document of 
+the following structure:
+<UL>
+<LI> 1. Section One  </LI>
+<UL>
+<LI>1.1 Subsection One-One</LI>
+<UL>
+<LI> ... </LI>
+</UL>
+<LI>1.2 Subsection One-Two</LI>
+<UL>
+<LI>1.2.1 Subsubsection One-Two-One
+</LI><LI>1.2.2 Subsubsection One-Two-Two
+</LI><LI>1.2.3 Subsubsection One-Two-Three &nbsp; &nbsp; <STRONG>
+&lt;== Current Position </STRONG>
+</LI><LI>1.2.4 Subsubsection One-Two-Four
+</LI></UL>
+<LI>1.3 Subsection One-Three</LI>
+<UL>
+<LI> ... </LI>
+</UL>
+<LI>1.4 Subsection One-Four</LI>
+</UL>
+</UL>
+
+<HR SIZE=1>
+<BR>  
+<FONT SIZE="-1">
+This document was generated
+by <I>Yannick Perret</I> on <I>May, 7  2002</I>
+using <A HREF="http://www.mathematik.uni-kl.de/~obachman/Texi2html
+"><I>texi2html</I></A>
+</FONT>
+
+</BODY>
+</HTML>

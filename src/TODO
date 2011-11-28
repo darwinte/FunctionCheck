@@ -1,0 +1,30 @@
+TODO list. If you want to contribute, you can choose any
+of these points... :o)
+
+* [ok] correct local time calculation for recursive functions
+* [changed] in fork mode, duplicate the parent context for new
+processes
+  => empty functions in the stack to allow exits from
+     unkown functions during profile
+* limit of 16 exits from unknown functions
+* {ok] limit of 64 contexts
+* make some performance tests to improve the code
+* [ok] time between exit() and the previous function entering is discarded
+  => time is only discarded in case of 'core dump'
+* make some performance tests with multi-pipes system
+* [ok] add ressource files (see fc_ressource.[ch])
+* [ok: to test] add time-loop management to allow executions > 1H12
+* time between forks and next action -> redefine of 'fork' ?
+
+Code improvment:
+* use 'static' for local functions/variables
+* use 'inline' for small functions
+* change the message format in order to allow size-variable messages,
+    depending of the kind of message. Note: it MUST be sent
+    with only one 'write' (for multi-thread safety).
+
+
+later:
+* [ok] tests for the configuration stuff
+  => only on my computer + solaris
+* internationalization stuff (examples?)

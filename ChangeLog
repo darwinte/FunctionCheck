@@ -1,0 +1,215 @@
+May 2002, V3.0.11:
+	* corrected a bug in hash-table index computation. The
+	    call-arcs system was buggy in case of C++ using
+	    static constructors and templates. May be safe now.
+	Note: the shared buffer FIFO system seams to be fine.
+
+Mar 2002, V3.0.10:
+	* new communication system added. It is based on a shared
+	    buffer and replace the 'pipe' system for coms between
+	    the profiled program and the profile manager.
+	  The main advantage is that it is FASTER. The overhead
+	  due to the profiler is divided by 3~4 on my computer.
+          Still in test, in particular for multi-thread / multi-process
+	    accesses to the FIFO system (exerimental mutex system).
+
+Mar 2002, V3.0.9:
+	* corrected a bug that make fork/thread mode to discard
+	    some messages for processes other than the initial one
+	    (with consequence that profile data files were empy)
+	* updated doc
+	* corrected a bug that make libfc to generate invalid
+	    dates for starting/ending treatments.
+
+Mar 2002, V3.0.8:
+	* corrected a bug the make memory profiling always on
+
+Mar 2002, V3.0.7:
+	* corrected several bugs in memory messages system.
+	* updated doc.
+	* corrected a bug in the previous release: the reversed
+	    arc system was buggy, generating erroneous call-arcs.
+
+Mar 2002, V3.0.6:
+	* corrected a bug that let the profile mode unchanged in the
+	    manager, even after receiving the used mode from init
+	* find a bug: in some case (related to C++) the call-arc
+	    to main is not present in the arcs list. Still don't
+	    know why.
+	* corrected a bug in fc_context that generates an invalid
+	    number of realloc entries in the profile data files.
+	    The printed number of entries was the one corresponding
+	    to invalid frees, instead of invalid reallocs.
+	* found a bug in call-arcs managment. I first supposed that
+	    the 'from' address for an arc is unique, and it was used
+	    as key in a hash-table. It appears that different arcs
+	    with the same origin can exist... So I added the detection
+	    for the case where the arc is the same (standard behavior).
+	    If not, a reversed arc is stored instead (I hope that
+	    I did not introduce a new way of colision :o)
+	* replaced the exit message with NULL-NULL to announce the
+	    end of a process by the message 'quit'.
+
+Mar 2002, V3.0.6:
+	* corrected the configure.in and src/Makefile.am to handle
+	    missing libraries
+	* corrected test/Makefile.am to handle fc-config
+	* corrected fc-config.gen (bad -D format)
+	* added support for dlfcn functions in fc_com_manager
+	* added correct read for dlfcn messages in fcmanager
+	    (still not used, but read)
+
+Mar 2002, V3.0.6:
+	* changed the way fc_com/fc_com_manager transmit messages.
+	    now the system support messages with variable sizes.
+	* updated all the sources in order to use the new message
+	    system. Tested: ok.
+	* re-created message structures in order to transmit all
+	    the relevant informations for each kind of message
+	* created messages for dlopen familly, fork/thread creation,
+	    for parent, for time and for quit. Not used but ready.
+	* improved some headers
+	* prepared 'dlopen' familly handling in fc-config (not used).
+        * added dlfcn + fork + thread_create handling in fc-config
+        * added redirection functions for dlfcn + fork + thread_create
+        * added messages handling (no action) in fcmanager
+
+
+Mar 2002, V3.0.5:
+	* added fc_xhash.[ch], an other hash-table of my own
+	* added PACKAGE and VERSION extraction from configure,
+	    and not statically as previously
+	* corrected a bug in memory managment (invalid references
+	    for Memory Elements stored in the hash-table)
+
+Mar 2002, V3.0.5:
+	* added fc_xhash.[ch], an other hash-table of my own
+	* removed all glib relative stuff
+	* corrected some minor bugs type convertions
+	* improved the test/ makefile. still a problem to run
+	    'simple_test_lib' due to a '__dso_handle' symbol
+	    missing. don't know what it is...
+            -> seems to be a bug of the linux at work
+	    => yes: it depends of the gcc version... a priori
+	        a bad installation of gcc3.0.4 at work...
+        * created a fc-config.gen
+        * added a rule to generate fc-config with respect
+            to the current configuration
+
+Mar 2002, V3.0.4:
+	* splitted fc_memory into fc_memory and fc_memory_manager
+	* added call-stack management for malloc actions
+	* added call-stack dump in profile data file
+	* corrected src/Makefile.am and some headers
+        * switched to V3.0.4
+
+Mar 2002, V3.0.4:
+	* added full support for memory leaks, invalid free and
+            invalid realloc. still a bug in the profile data file.
+        * improved some parts of the configure.in and Makefile.am
+            for src/ and test/ subdirs.
+        * corrected some bugs in memory leaks data. still missing
+            the call-stack
+
+Mar 2002, V3.0:
+	* added 'malloc.h' and '__malloc_hook' test in configure.in
+	* added memory hooks in profiler part to handle memory events
+	* added memory info messages (com part)
+	* added basic treatment (printf) for memory events in manager
+	* added switch to activate memory management in options
+	* improved makefile in test/. added 'help' target and
+	    'run-PROG' target to help user to start profiling
+	    with an uninstalled archive (local execution).
+        * started managment for the memory actions in the fcmanager
+
+Feb 2002, V3.0:
+	* added Makefile.am in test/ directory and corrected
+	    stuff in configure.in and ./Makefile.am to use it
+	* started to re-write memory profiling support (fc_com.[ch])
+
+Feb 2002, V3.0:
+	* added more support for Solaris architecture
+
+Feb 2002, V3.0:
+	* corrected configure in order to prevent unsupported
+	    link.h features under Solaris
+	* added compilation flag to prevent errors under solaris.
+	    With solaris, the list of dynamic libraries will
+	    not be created in the profile data file(s). This
+	    will prevent fcdump to extract files and lines
+	    for functions in dynamic objects.
+	* corrected bug in setenv/unsetenv management (configure
+	    and Makefile.am)
+	* added some .SILENT in makefiles for 'messages' targets
+	    (such as 'help' or 'default' in test/)
+	* added 'glib-config' support for glib relative stuff.
+	    better support for non-standard glib installations.
+	* minor changes in test/Makefile (due to incompatibility
+	    with standard /bin/sh)
+
+Feb 2002, V3.0:
+	* switched arcs list (call-graph) in fcmanager to
+	    hash-table (using glib) [tested: ok]
+	* added glib tests in configure.in
+
+Feb 2002, V3.0:
+	* removed static array for contexts. now perform
+	    reallocation each 64 processes.
+	* added TODO in the distribution list
+	* started devel. of 'fc_dmanager', a dynamic manager
+            for libfc. The goal is to allow user to interact
+            with 'fc_dmanager' to control what is profiled
+            and how profile is performed
+	* added FC_DMANAGER variable to switch between
+            fcmanager and fc_dmanager at execution
+
+Feb 2002, V3.0:
+	* added 'help' target in the main makefile
+	* added new examples in test/, on in C++ language
+	    to test demangle stuff, and on with a dynamic
+	    object to test problems while solving names
+
+Feb 2002, V3.0:
+	* changed all 'unsigned int' to 'long long int' in
+	  fcmanager stuff (context, stack, functions)
+	* added a time pad to take care about 'uint' time
+	    loops
+	* 'uint' times are now converted into 'long long' times
+	* changed the profile data file format to export
+	    'long long int' data for times
+	* corrected a small bug that add a (null)-(null) arc
+	    at the end of the arcs list
+	* updated the doc/ stuff
+
+Feb 2002, V3.0:
+	* corrected a bug in local time computation for recursive
+            functions (local time was > at total time)
+	* moving libfc stuff to sourceforge CVS
+	* corrected bug that made time between last 'enter' and
+	    an exit() call to be discarded.
+
+Feb 2002, V3.0:
+	* first complete version of 'libfc' documentation
+	* "stable" version of the configure
+	* creating 'fc-config' script to give compilation flags
+	* adding empty functions in the stack for 'fork' mode to
+	    deal with exits from unknown functions
+	* starting to create 'configure' for FunctionCheck
+	* creating optimized structures/functions for each
+	    profiling mode (SINGLE, FORK, THREAD) and functions
+	    pointers to call them
+	* using <link.h> to acces to dynamic objects, instead of
+	    using 'ldd' program
+
+Jan 2002, V3.0:
+	* adding MIN and MAX time for local time
+	* using 'unsigned int' for time. profiling is restricted
+	    to ~1h12 of running time
+	* using _init and _fini to deal with initializations and
+	    terminations.
+	* no more memory events tracking
+	* creating 'fcmanager' to treat profiling data
+	* creating 'fc' library for profiling
+
+Changes from 2.0 to 3.0:
+	* V3.0 comes from scratch

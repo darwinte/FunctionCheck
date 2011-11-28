@@ -1,0 +1,776 @@
+This is libfc.info, produced by makeinfo version 4.13 from libfc.texi.
+
+START-INFO-DIR-ENTRY
+* libfc: (libfc).                Profiling your program's execution
+END-INFO-DIR-ENTRY
+
+   This file documents the profiler called libfc (FunctionCheck).
+
+   Copyright (C) 2001-2002, Yannick Perret.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions.
+
+
+File: libfc.info,  Node: Top,  Next: Introduction,  Up: (dir)
+
+Profiling a Program: Where Does It Spend Its Time?
+**************************************************
+
+This manual describes the profiler called `libfc', and how you can use
+it to determine which parts of a program are taking most of the
+execution time.  We assume that you know how to write, compile, and
+execute programs.  `libfc' was written by Yannick Perret.
+
+   Note: this info file is for `libfc' V3.0.9.
+
+   Note: this info file is initially based on `gprof''s manual.  Thanks
+to authors.
+
+* Menu:
+
+* Introduction::        What profiling means, and why it is useful.
+* Features::            What `libfc' is able to do.
+* Compiling::           How to compile your program for profiling.
+* Executing::           Executing your program to generate profile data
+* Output::		Interpreting `libfc''s output
+* Details::             Details of how profiling is done
+* Limits::              What `libfc' can't do or con't do well
+
+
+File: libfc.info,  Node: Introduction,  Next: Features,  Prev: Top,  Up: Top
+
+1 Introduction to Profiling
+***************************
+
+Profiling allows you to learn where your program spent its time and
+which functions called which other functions while it was executing.
+This information can show you which pieces of your program are slower
+than you expected, and might be candidates for rewriting to make your
+program execute faster.  It can also tell you which functions are being
+called more or less often than you expected.  This may help you spot
+bugs that had otherwise been unnoticed.
+
+   Since the profiler uses information collected during the actual
+execution of your program, it can be used on programs that are too
+large or too complex to analyze by reading the source.  However, how
+your program is run will affect the information that shows up in the
+profile data.  If you don't use some feature of your program while it
+is being profiled, no profile information will be generated for that
+feature.
+
+   `fcdump' profiler is divided into two main parts.  The first one is
+the profiling part, compouned by `libfc' library, which needs to be
+linked with the program to be profiled, and `fc_manager' program, which
+treats profiling data.  The second part is the `fcdump' program itself
+which extracts and displays profile information for your program.
+
+   Profiling has several steps:
+
+   * You must compile and link your program with profiling enabled.
+     *Note Compiling::.
+
+   * You must execute your program to generate a profile data file.
+     *Note Executing::.
+
+   *  You must analyze the profile data (see `fcdump' to perform this
+     task).  *Note Output::.
+
+   The next three chapters explain these steps in greater detail.
+
+
+File: libfc.info,  Node: Features,  Next: Compiling,  Prev: Introduction,  Up: Top
+
+2 What it is Able to Do
+***********************
+
+`libfc' is a library which is linked to the program to profile. This
+library tracks actions performed by the profiled program during
+execution, and send these data to a program called `fc_manager', which
+is started by `libfc' at initialization stage. `fc_manager' treats all
+these data and generates profile data file(s) which resume the
+execution characteristics.
+
+   In addition (since version V3.0.3) it allows to get memory leaks and
+invalid pointers given to `free' and `realloc', with additionnal
+informations such as the place where it happend and the call-stack at
+this time.
+
+   Supported features are:
+
+   * C/C++ programs, including constructors/destructors.
+
+   * Multi-process/multi-thread programs, generating separate profile
+     data files for each of them. Of course single-process/no-thread
+     programs can be profiled too.
+
+   * Profile highly configurable at execution time, via shell variables
+     or ressource files.
+
+   * Memory leaks during execution.
+
+
+
+File: libfc.info,  Node: Compiling,  Next: Executing,  Prev: Features,  Up: Top
+
+3 Compiling a Program for Profiling
+***********************************
+
+The first step in generating profile information for your program is to
+compile and link it with profiling enabled. Remember that `libfc' can
+only be used with `gcc' V2.95.2 or higher.
+
+   To compile a source file for profiling, you have to specify a set of
+options to `gcc' at compilation and link stages.  These options can be
+given by `fc-config' script.
+
+   Just add ``fc-config --cflags`' in your compilation lines.  This is
+in addition to the options you normally give to `gcc'.
+
+   To link the program for profiling, use again `fc-config' program.
+Just add ``fc-config --libs`' in your link line. As previously, this is
+in addition to the options you normally give to `gcc' or `ld'.
+
+   Here are some examples:
+
+     gcc `fc-config --cflags` -c myprog.c
+     gcc `fc-config --cflags` -c utils.c
+     gcc `fc-config --libs` -o myprog myprog.o utils.o
+
+   You can also use `fc-config' with a command that both compiles and
+links:
+
+     gcc `fc-config --cflags` `fc-config --libs` -o myprog myprog.c utils.c
+
+   or even shorter:
+
+     gcc `fc-config --cflags-libs` -o myprog myprog.c utils.c
+
+   If you compile only some of the modules of the program with
+profiling options, you can still profile the program, but you won't get
+complete information about the modules that were compiled without
+profiling options.  The only information you get is the time spend in
+them, seen as local time for the calling functions.
+
+   Note that some strange results may be generated if a profiled
+function calls a not profiled function which calls a profiled
+function...
+
+   The script `fc-config' is generated when you build `libfc'.  In
+particular it set the correct version number and the pathes to access
+to the library `libfc' and the profile manager `fc_manager'. In
+addition, it set some flags needed by your compiled programs in order
+to allow profile.  Special options exist for `fc-config':
+
+   * `--version' gives the version of the installed `libfc'
+
+   * `--cflags' gives all the needed options to compile an object for
+     profiling
+
+   * `--libs' gives all the needed options to link objects in order to
+     generate a program ready for profiling
+
+   * `--cflags-libs' or `--libs-cflags' gives all the needed options to
+     compile and link on the same `gcc' line
+
+
+   In addition to basic needs for compilation/link, `fc-config'
+redirects some functions for internal treatments. These functions are
+`fork', `pthread_create', `dlopen', `dlsym' and `dlclose'. The
+redirection is made using the `-Dsymbol=new_symbol' option of `gcc'.
+
+   It may be a problem for your program if you still redirect these
+functions (such as with `#define' macro commands). If you have troubles
+with that, you can disable the redirections using optional flags. These
+flags are `--no-dl' to prevent redirection of `dlfcn' functions,
+`--no-fork' to prevent `fork' redirection and `--no-thread' to prevent
+`pthread_create' redirection.
+
+   Warning: these options MUST be given AFTER the action flags (one of
+`--cflags', `--libs' or `--cflags-libs').
+
+
+File: libfc.info,  Node: Executing,  Next: Output,  Prev: Compiling,  Up: Top
+
+4 Executing the Program
+***********************
+
+Once the program is compiled for profiling, you must run it in order to
+generate the profile data file(s).  Simply run the program as usual,
+using the normal arguments, file names, etc.  The program should run
+normally, producing the same output as usual.  It will, however, run
+somewhat slower than normal because of the time spent collecting the
+profile data.
+
+   The way you run the program--the arguments and input that you give
+it--may have a dramatic effect on what the profile information shows.
+The profile data will describe the parts of the program that were
+activated for the particular input you use.  For example, if the first
+command you give to your program is to quit, the profile data will show
+the time used in initialization and in cleanup, but not much else.
+
+   `fc_manager' will write the profile data into a file called
+`functioncheck.fc' just before exiting.  If there is already a file
+called `functioncheck.fc', its contents are overwritten.  You can
+specify an other file name by setting the shell variable `FC_DUMP_NAME'
+with the needed file name.
+
+   If your program uses `fork()' function or multi-thread, a profile
+data file will be generated for each of the process/thread existing
+during the execution.  In this case, the processes will dump into
+`functioncheck.fc.NNN' or whatever name you set, with `NNN' an
+identifier of each process (PID or pthread_self()).
+
+   The `functioncheck.fc' file is written in the program's _current
+working directory_ at the time it starts.  You can change the directory
+used by setting the shell variable `FC_DUMP_PATH' with the needed path
+name.
+
+   If several processes are present, a file named `functioncheck.fcd' is
+generated. This file contains a description of all files generated by
+the profiler. For each of them, the corresponding identifier and the
+file name generated are given.  Moreover, a try is make to display the
+launching tree of the processes.
+
+   The default mode for `libfc' is the `FORK' mode.  In this mode you
+can profile single-process programs, multi-processes programs (programs
+which use `fork()' function) and multi-threads program.
+
+   In this mode threads will be seen as processes and identified by
+their process-id (PID). This is possible because linux threads use
+different processes to run threads. Moreover some FORK specific
+treatments are made which are not useful for threaded cases.  You may
+switch `libfc' to `THREAD' mode if you intend to profile a multi-thread
+program.
+
+   In `FORK' mode, single-process programs can be profiled without any
+restriction. But if you know that your program will never uses `fork()'
+calls, you can switch to `SINGLE' mode in order to optimize treatments
+performed by `libfc' (it reduce the cost of the treatments performed
+during profile).
+
+   Please note that using `SINGLE' mode with multi-processes or
+multi-threaded programs will give erroneous profile data files.
+
+   See below for profile-mode selection.
+
+   Notes:
+
+   `fc_manager' program must be in the `PATH' of your profiled program,
+and the `libfc' library must be in the `LD_LIBRARY_PATH'.
+
+   Several shell variables can be used to change profile behavior:
+
+   * `FC_TIME_MODE': set the kind of time used for profiling. The
+     possible values are `tsc', `ext', `sys' and `cpu'.  `tsc' means
+     that the processor time stamp counter is used.  In this mode, the
+     rdtsc instruction is called.  Available in x86 processor since
+     Pentium or higher.  `ext' means that the real clock time is used.
+     In this mode a function that runs during one second will appear
+     with the same time in the profile data files. `sys' and `cpu' are
+     (for the moment) the same. The time used is the CPU time. Time
+     spend by the system in other programs, input/output treatments...
+     is not taked in count. In most case this mode gives really small
+     execution time. The default value is `tsc'.
+
+   * `FC_NO_FORK': if set, `libfc' will switch to `SINGLE' mode. In
+     this mode, you can only profile single-process programs, but
+     treatments are optimized.
+
+   * `FC_ALLOW_THREAD': if set, `libfc' will switch to `THREAD' mode.
+     In this mode, you can profile multi-threads programs.  Do not use
+     this mode with multi-processes programs, because some informations
+     may be discared in the profile data files.
+
+   * `FC_DUMP_NAME': if not set, the default name for profile data
+     files is `functioncheck', plus the extention (`.fc').  You can set
+     your own name in this variable.
+
+   * `FC_DUMP_PATH': if not set, profile data files are generated in
+     the directory in which your program starts. You can specify a new
+     path in this variable.
+
+   * `FC_HELP': if set, `libfc' will display a summary of the available
+     options and stops.
+
+   * `FC_QUIET': if set, `libfc' will not display any information
+     message that are normaly given at the begin and the end of the
+     program execution.
+
+   * `FC_DEBUG': if `libfc' and `fc_manager' were compiled with debug
+     enabled, this variable activates the debug mode (only usefull for
+     `libfc' developpers).
+
+   * `FC_STACK_SIZE': set the initial stack size used by `fc_manager'.
+     The default value is 512.
+
+   * `FC_GRAPH_SIZE': set the initial graph-table size used by
+     `fc_manager'. The default value is 512.
+
+   * `FC_FUNCTION_SIZE': set the initial function-table size used by
+     `fc_manager'. The default value is 512.
+
+   * `FC_BUFFER_SIZE': set the number of elements in the buffer in the
+     global shared memory used for communications between `libfc' and
+     `fc_manager'. The default value is 4096.
+
+   * `FC_MEMORY': if set, `libfc' will profile memory operations during
+     execution. `malloc', `free', `realloc' and `memalign' are hooked
+     in order to manage the state of the memory blocks used during
+     execution. At exit, each remaining block is dropped in the profile
+     data file (for each process).
+
+     In addition the call-stack at allocation time is stored. You can
+     set the call-stack depth stored with `FC_MEMORY_STACK' variable
+     (default depth is 4).
+
+
+   When running your profiled program, some informations are given by
+`libfc' and `fc_manager' (if you set the `FC_QUIET' variable, no
+informations are given).
+
+   First, `libfc' gives the list of current options and values used for
+the profile. It looks like:
+
+     FCheck: Starting FunctionCheck V3.0 by Y.Perret
+     FCheck: Profile parameters are:
+     FCheck:   functions table size : 512
+     FCheck:       stack table size : 512
+     FCheck:             graph size : 512
+     FCheck:            buffer size : 4096
+     FCheck:              time mode : ext
+     FCheck:         profiling mode : forks allowed / no threads
+     FCheck:             debug mode : off
+     FCheck:       profiling memory : off
+     FCheck:         dump-file name : functioncheck
+     FCheck:         dump-file path : ./
+     FCheck:
+
+   Regarding to the variables you set before running your program, the
+values can be different. In particular the profile mode is `forks
+allowed / no threads' in the (default) `FORK' mode, is `no forks / no
+threads' in `SINGLE' mode and is `no forks / threads allowed' in
+`THREAD' mode.
+
+   Then you will see the profile manager (`fc_manager') starting:
+
+     FCMng: Profile manager: running [NNN]
+   where 'NNN' is the process-id of the profile manager.
+
+   Your program will then run as usual. At the end of the execution,
+the profile manager will alert you:
+
+     FCMng: communication pipe closed. end of profiled program.
+     FCMng: Profile file is './/functioncheck.fc'
+     FCMng: Profile manager: exit
+   The profile manager gives the name of the generated profile data
+file.
+
+   If more than one profile data file is generated (multi-processes or
+multi-threads), each file is post-fixed with the identifier of the
+corresponding entity (the process-id or the thread-id).  In each cases,
+a summary file called `functioncheck.fcd' is generated. This file
+describe all the .fc files generated: name, corresponding
+process/thread, parent for processes).  In this case, the manager
+prints the name of the generated summary, which default name is
+`functioncheck.fdc'.  Here is a sample of `functioncheck.fdc' content:
+     FunctionCheck descriptor file.
+     2 processes treated.
+     Treatments started at: 70/00/01 01:07:56
+     Treatments ended at: 102/02/15 13:13:00
+
+     Process id: 1024
+         parent: pthread_create
+           file: .//functioncheck_thread.fc.1024
+
+     Process id: 1026
+         parent: pthread_create
+           file: .//functioncheck_thread.fc.1026
+
+   Note: if some troubles occur during profile (profile mode do not
+correspond to the current program) warning or fatal messages can be
+displayed during execution.
+
+
+File: libfc.info,  Node: Output,  Next: Details,  Prev: Executing,  Up: Top
+
+5 Interpreting `libfc''s Output
+*******************************
+
+The format of .fc files is very simple and can be read as a text file.
+In the description below, the corresponding format to use in `scanf' is
+given at the en of each line.  Lines that contain `(...n...)' indicate
+that it is a list of 'n' elements.
+
+     functioncheck_v3.0			%s
+     unique_ID				%s
+     time_mode				%d
+     profile_mode				%d
+     PID					%d
+     PPID					%d
+     exec_time				%u
+     Ncg					%d
+     from to	nb				%p%p%d
+     from to	nb				%p%p%d
+     (...Ncg...)
+     from to	nb				%p%p%d
+     Nf
+     fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%u%u%u%u
+     fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%u%u%u%u
+     (...Nf...)
+     fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%u%u%u%u
+     Ndl
+     addr name				%p%s
+     addr name				%p%s
+     (...Ndl...)
+     addr name				%p%s
+     nb_elements
+     addr size loc reloc stk stk ... NULL	%p%d%p%p%p%p...%p
+     addr size loc reloc stk stk ... NULL	%p%d%p%p%p%p...%p
+     (...nb_elements...)
+     addr size loc reloc stk stk ... NULL	%p%d%p%p%p%p...%p
+     nb_elements
+     loc pointer stack stack ... NULL	%p%p%p%p...%p
+     loc pointer stack stack ... NULL	%p%p%p%p...%p
+     (...nb_elements...)
+     loc pointer stack stack ... NULL	%p%p%p%p...%p
+     nb_elements
+     loc pointer stack stack ... NULL	%p%p%p%p...%p
+     loc pointer stack stack ... NULL	%p%p%p%p...%p
+     (...nb_elements...)
+     loc pointer stack stack ... NULL	%p%p%p%p...%p
+
+   The first line (`functioncheck_v3.0') is the header of the file, to
+check if it was generated by `libfc' V3.0.
+
+   The `unique_ID' is a string which is unique for a given execution of
+a program. This is used in case of multi-processes or multi-threads
+program, as each of the generated `functioncheck.fc.NNN' files share
+the same unique ID (useful to group several files to obtain an overview
+of the program execution, including all its processes/threads).
+
+   `time_mode' is an `int' that indicate the time unit used during
+profile. Possible values are given in the file `src/fc_blobal.h' and
+are: 1: "tsc", 2: "ext", 3: "cpu" and 4: "sys".  Any other value is
+invalid.
+
+   `profile_mode' is an `int' that indicate the profile mode used
+during profile. Possible values are given in the file `src/fc_blobal.h'
+and are: 1: `SINGLE', 2: `FORK' and 3: `THREAD'.  Any other value is
+invalid.
+
+   `PID' and `PPID' give respectively the process identifier and the
+process identifier current process parent. In `SINGLE' or `FORK' mode
+identifiers are process-id (PID). In `THREAD' mode identifiers are
+thread-id, obtain by `pthread_self()' function. Note that in `THREAD'
+mode the parent identifier is not relevant.
+
+   The `exec_time' is the total number of microsecond elasped in this
+process. In fact this time is the difference between the last and the
+first events known for this process.
+
+   `Ncg' indicates the number of call-graph arcs to read. Each comming
+lines are pairs of `from' and `to' addresses.  Each line defines a call
+to address `to', from address `from' (in the program address space).
+The following number is the number of time this call was performed
+during the execution.
+
+   `Nf' indicates the number of functions entries to read. Each line
+describes statistics for a function. `fnc' is the function symbol
+address. `calls' is the total number of calls to this function. `loc'
+and `tot' are respectively the local and total time spend in the
+function. Total time is the time of presence of the function is the
+call-stack, and local time is this time minus the time spend in child
+functions. `tmin' and `tmax' are respectively the minimum and maximum
+total time spend in the function for one call. If a function is called
+only once, `tmin' and  `tmax' will be the same. `lmin' and `lmax' are
+the same but for local time.
+
+   `Ndl' indicates the number of dynamic library to read.  Each line
+gives an additionnal dynamic library that was used by the program at
+execution time. `addr' is the base address of the library (in the
+program address space) and `name' is the library name.
+
+   Only files from version higher or equal to V3.0.3 are concerned by
+this part.
+
+   `nb_elements' indicates the number of memory leaks.  From left to
+right, the entries are: address returned by the `malloc' or `memalign',
+initial size of the block (reallocation sizes are not stored), symbol
+address where the allocation happends, symbol address where the
+reallocation happends (or NULL else), and then the call-stack
+corresponding to the allocation, ended by a NULL pointer.
+
+   `nb_elements' indicates the number of invalid free.  From left to
+right, the entries are: symbol address where the invalid `free' was
+called, the pointer passed to `free', and then the call-stack
+corresponding to the `free', ended by a NULL pointer.
+
+   `nb_elements' indicates the number of invalid reallocation.  From
+left to right, the entries are: symbol address where the invalid
+`realloc' was called, the pointer passed to `realloc', and then the
+call-stack corresponding to the `realloc', ended by a NULL pointer.
+
+   Note that any of the number of elements can be equal to zero, except
+for the number of arcs and the number of functions.
+
+
+File: libfc.info,  Node: Details,  Next: Limits,  Prev: Output,  Up: Top
+
+6 Details of Profiling
+**********************
+
+More details about how `libfc' library perform its job.
+
+* Menu:
+
+* Implementation::      How the library collects profiling information
+* File Format::         Format of `functioncheck.fc' files
+* Internals::           `fc_manager''s internal operation
+* Debugging::           Using debug while executing programs
+
+
+File: libfc.info,  Node: Implementation,  Next: File Format,  Up: Details
+
+6.1 Implementation of Profiling
+===============================
+
+The `libfc' library uses a feature of `gcc' V2.95.2 (or higher) called
+`-finstrument-functions'.  This option makes `gcc' to add to every
+functions a call at enter and at exit.  The `libfc' library provides
+these two functions called `void __cyg_profile_func_enter(void
+*this_fn, void *call_site)' and `void __cyg_profile_func_exit(void
+*this_fn, void *call_site)'.
+
+   The `libfc' library also provides functions called `_init()' and
+`_fini()' to perform some initializations and cleanups before and after
+the profiled program starts or stops.
+
+   The `libfc' library starts the `fc_manager' program, and send to it
+all the enter/exit that occur during the program execution.
+`fc_manager' manages a stack of function calls and a list of functions.
+For each of them, the number of calls, the time spend in them (local
+and total) is computed.  Moreover the execution call-graph is stored in
+order to be saved with profile data.
+
+   At exit time (when the stream between the program and `fc_manager'
+is cutted), all these data are dumped into a file in order to be
+analysed.
+
+   Note: the `libfc'/`fc_manager' pair only works with symbol addresses
+of functions, and not with names.  Names can be extracted from the
+program and the library list using `binutils' tools.
+
+
+File: libfc.info,  Node: File Format,  Next: Internals,  Prev: Implementation,  Up: Details
+
+6.2 Profiling Data File Format
+==============================
+
+Here is a short description of profile data file format.  A more
+detailled version is given above.
+
+     functioncheck_v3.0			%s
+     unique_ID				%s
+     time_mode				%d
+     profile_mode				%d
+     PID					%d
+     PPID					%d
+     exec_time				%lld
+     Ncg					%d
+     from to					%p%p
+     from to					%p%p
+     (...Ncg...)
+     from to					%p%p
+     Nf
+     fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%lld%lld%lld%lld
+     fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%lld%lld%lld%lld
+     (...Nf...)
+     fnc calls loc tot tmin tmax lmin lmax	%p%d%lld%lld%lld%lld%lld%lld
+     Ndl
+     addr name				%p%s
+     addr name				%p%s
+     (...Ndl...)
+     addr name				%p%s
+     nb_elements				%d
+     blk size loc reloc stk stk ... NULL	%p%u%p%p%p...%p
+     blk size loc reloc stk stk ... NULL	%p%u%p%p%p...%p
+     (...nb_elements...)
+     blk size loc reloc stk stk ... NULL	%p%u%p%p%p...%p
+     nb_elements				%d
+     loc ptr stk stk ... NULL		%p%p%p...%p
+     loc ptr stk stk ... NULL		%p%p%p...%p
+     (...nb_elements...)
+     loc ptr stk stk ... NULL		%p%p%p...%p
+     nb_elements				%p
+     loc ptr stk stk ... NULL		%p%p%p...%p
+     loc ptr stk stk ... NULL		%p%p%p...%p
+     (...nb_elements...)
+     loc ptr stk stk ... NULL		%p%p%p...%p
+
+
+File: libfc.info,  Node: Internals,  Next: Debugging,  Prev: File Format,  Up: Details
+
+6.3 `fc_manager''s Internal Operation
+=====================================
+
+Here are the treatments performed by `fc_manager' program for each
+enter/exit of functions:
+
+   At the first call:
+
+   Initializations of hash-tables, options, stack.
+
+   When entering a function:
+*
+     add the call in the call-graph (if not still present)
+
+*
+     check if the function is still registered, and register it if it
+     is not the case.
+
+*
+     store the function and its entering time in the stack
+
+*
+     compute the additional local time for the calling function. It is
+     the time between the last active time of this function minus the
+     current time.
+
+   When exiting a function:
+*
+     compute the total execution time (difference between entering time
+     and current time)
+
+*
+     increment number of calls
+
+*
+     update min/max values
+
+*
+     compute the additional local time for the calling function. It is
+     the time between the last active time of this function minus the
+     current time.
+
+
+   When leaving the program:
+
+   Creates the profile data file and dumps data into it.  Freed
+allocated tables.
+
+   Some specific treatments are performed in `FORK' or `THREAD' modes.
+
+   When receiving a enter/exit message, a test is done to see if the
+process identifier exists. If not a new context is create for this new
+process. In any cases, informations are added in the context of the
+process.
+
+   In `FORK' mode, special treatments are performed at context creation
+in order to allow exits from unkown functions (in the new context).
+
+
+File: libfc.info,  Node: Debugging,  Prev: Internals,  Up: Details
+
+6.3.1 Debugging during execution
+--------------------------------
+
+In order to allow debug during execution, you have to compile the
+`libfc' library  and the `fc_manager' with compilation flag
+`-DFC_DEBUG'.  This allows you to use the shell variable `FC_DEBUG'.
+
+
+File: libfc.info,  Node: Limits,  Prev: Details,  Up: Top
+
+7 What `libfc' can't do or can't do well
+****************************************
+
+`libfc' have some limitations or things that are done in a bad way.
+
+*
+     For V3.0.3+: memory profiling is performed using `hooks' from the
+     `libc''s `malloc.h'. Without `libc' this part of the profiler will
+     not be available. In addition if your program gives its own hooks,
+     the given leaks will be correct but all locations will be invalid,
+     as they will reflect your own hooks, and not your program.
+
+*
+     profile of objects opended with `dlopen()' may be corrupted.  This
+     is due to the fact that functions addresses are re-used when an
+     object is closed. In addition it is not possible to know the
+     object name (it is not given in the profile data file) and the
+     base address during execution.
+
+     The only known way to prevent this is a hack:
+
+     just link your program with all the dynamic objects that might be
+     opended with `dlopen()'. Like this, addresses are pre-reserved in
+     your program address space, and no address collision will occur,
+     and objects names will be available.
+
+*
+     the functions table in `fc_manager' is a hash-table. It is so very
+     difficult to resize it at low cost. At this time, profile is
+     aborted in case of function-table overflow. If this occur, set a
+     higher function-table size with `FC_FUNCTION_SIZE' variable.
+
+*
+     in `FORK' mode, the time elapsed between a `fork()' call and the
+     next event (enter or exit from a function) is discarded in the
+     child process. This will not be corrected, as I don't know how to
+     correct it!
+
+*
+     when exiting your program with with a `core dump' technic, the
+     time elapsed between the last event (enter or exit in a function)
+     and the time of the program crash is discarded.
+
+*
+     an absolute limit of 72 mins of execution is allowed between two
+     successive actions (actions are enters or exits from profiled
+     functions). If a function do nothing else than local treatments
+     (calls to non-profiled functions are viewed as local treatments),
+     corresponding times will be erroneous.
+
+*
+     if your program provides its own `_init()' and `_fini()'
+     functions, I'm not sure of the `gcc' behavior, but I think the
+     compilation will failed.
+
+*
+     if the profile mode is not adapted to your program (i.e. `SINGLE'
+     mode with a multi-threads program) the `fc_manager' will have
+     difficulties to treat erroneous data received. You may have
+     SEVERAL warning messages from `fc_manager', and trying to read the
+     generated profile data file make no sense.
+
+     It's not my fault! Set the adapted profile mode! :o)
+
+
+
+
+Tag Table:
+Node: Top859
+Node: Introduction1853
+Node: Features3605
+Node: Compiling4722
+Node: Executing7911
+Node: Output16813
+Node: Details22127
+Node: Implementation22566
+Node: File Format23975
+Node: Internals25392
+Node: Debugging27036
+Node: Limits27369
+
+End Tag Table

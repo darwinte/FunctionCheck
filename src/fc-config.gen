@@ -1,0 +1,97 @@
+
+#
+#  gives flags for compilation and link stages
+#
+
+
+
+# usage of the script
+usage()
+{
+  echo "Usage: $0 {--cflags|--libs|--cflags-libs|--version} [--no-dl] [--no-fork] [--no-thread]"
+  echo "'--no-dl' can be used with '--cflags' and forbid the"
+  echo "  redefinition of symbols 'dlopen', 'dlclose' and 'dlsym'"
+  echo "  (if you have your own dlopen/dlclose/dlsym redefinition)."
+  exit
+}
+
+
+
+FCADDS=""
+
+# if not empty, do not redefine the corresp. symbols
+NODL=""
+NOFORK=""
+NOTHREAD=""
+
+OPT1="$1"
+
+# treat options
+while test -n "$2" 
+do
+case "$2" in
+
+	--no-dl)
+        	NODL="1"
+		;;
+
+	--no-fork)
+        	NOFORK="1"
+                ;;
+
+	--no-thread)
+                NOTHREAD="1"
+                ;;
+
+	*)
+        	echo "fc-config: unknown option '$2'"
+
+esac
+
+shift
+
+done
+
+# remove the dl familly if requested
+if test -z "${NODL}"
+then
+FCADDS="${FCADDS} -Ddlopen=fc_redirect_dlopen "
+FCADDS="${FCADDS} -Ddlclose=fc_redirect_dlclose "
+FCADDS="${FCADDS} -Ddlsym=fc_redirect_dlsym "
+fi
+
+# remove the fork if requested
+if test -z "${NOFORK}"
+then
+FCADDS="${FCADDS} -D fork=fc_redirect_fork "
+fi
+
+# remove the thread if requested
+if test -z "${NOTHREAD}"
+then
+FCADDS="${FCADDS} -Dpthread_create=fc_redirect_pthread_create "
+fi
+
+
+# treat the main parameter
+case "${OPT1}" in
+
+	--version)
+		echo "${VERSION}"
+		;;
+	--cflags)
+		echo " -g -finstrument-functions -I${FCINCDIR} ${FCADDS} "
+		;;
+	--libs)
+		echo " -g -finstrument-functions -L${FCLIBDIR} -lfc "
+		;;
+	--cflags-libs)
+		echo " -g -finstrument-functions -I${FCINCDIR} ${FCADDS} -L${FCLIBDIR} -lfc "
+		;;
+	--libs-cflags)
+		echo " -g -finstrument-functions -I${FCINCDIR} ${FCADDS} -L${FCLIBDIR} -lfc "
+		;;
+	*)
+		usage
+		;;
+esac

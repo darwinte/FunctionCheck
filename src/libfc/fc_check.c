@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #define __USE_GNU
 #include <link.h>
 #ifndef FC_NO_DLFCN
@@ -31,9 +32,8 @@
 #endif
 
 #include "fc_global.h"
-#include "fc_tools.h"
-#include "fc_time.h"
 #include "fc_ressources.h"
+#include "fc_tools.h"
 #include "fc_com.h"
 #include "fc_memory.h"
 
